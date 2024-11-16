@@ -1,12 +1,10 @@
-require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
 const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+
 const app = express();
-
-const imageRoutes = require('./routes/imageRoutes');
-
 
 // Middleware
 app.use(cors());
@@ -19,11 +17,9 @@ mongoose
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Routes
-app.get('/', (req, res) => res.send('SecureFace Backend API'));
+// Import routes
+const imageRoutes = require('./routes/imageRoutes');
 app.use('/api/images', imageRoutes);
-
-
 
 // Start the server
 const PORT = process.env.PORT || 5000;

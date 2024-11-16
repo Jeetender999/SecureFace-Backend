@@ -1,0 +1,4 @@
+To register user and add token to faceset : http://localhost:5000/api/images/register 
+
+*I guess faceset Token ID is only created once so it needs to be stored properly
+"faceset_token": "162945605bd06faa9663edf767effbe9",

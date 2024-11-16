@@ -31,4 +31,28 @@ async function detectFace(imagePath) {
   }
 }
 
-module.exports = { detectFace };
+
+/**
+ * Create a FaceSet
+ * @returns {Object} - FaceSet creation result
+ */
+async function createFaceSet() {
+    try {
+      const response = await axios.post(`${FACE_API_URL}/faceset/create`, null, {
+        params: {
+          api_key: process.env.FACE_API_KEY,
+          api_secret: process.env.FACE_API_SECRET,
+          display_name: 'SecureFaceSet',
+          outer_id: 'securefaceset', // A unique identifier for the FaceSet
+        },
+      });
+  
+      return response.data;
+    } catch (error) {
+      console.error('Error creating FaceSet:', error.message);
+      throw new Error('Failed to create FaceSet.');
+    }
+  }
+
+  
+module.exports = { detectFace,createFaceSet };

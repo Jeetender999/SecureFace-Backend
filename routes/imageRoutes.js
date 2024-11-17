@@ -173,7 +173,55 @@ router.post('/match', upload.single('image'), async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   });
-  
+
+
+const sendEmailNotification = require('../utils/emailService'); // Import the email service
+
+router.post('/stranger', async (req, res) => {
+  try {
+    // Assume this is the result of your face matching logic
+    const isRegisteredUser = false; // Example: Replace with actual logic
+    const detectedEmotion = 'happiness'; // Example: Replace with actual logic
+    const detectedAge = 35; // Example: Replace with actual logic
+    const detectedGender = 'Male'; // Example: Replace with actual logic
+
+    if (!isRegisteredUser) {
+      // Build visitor details
+      const visitorDetails = {
+        name: 'Stranger',
+        age: detectedAge,
+        gender: detectedGender,
+        currentEmotion: detectedEmotion,
+        detectedAt: new Date().toLocaleString(), // Adjust the format as needed
+      };
+
+      // Trigger email notification
+      await sendEmailNotification(visitorDetails);
+
+      // Send response for a stranger
+      return res.status(200).json({
+        message: 'No match found. Visitor treated as Stranger',
+        visitor: visitorDetails,
+      });
+    }
+
+    // Example response for a registered user
+    res.status(200).json({
+      message: 'User matched successfully',
+      user: {
+        name: 'John Doe', // Example: Replace with actual user data
+        age: 30,
+        gender: 'Male',
+        currentEmotion: detectedEmotion,
+      },
+    });
+  } catch (error) {
+    console.error('Error processing request:', error);
+    res.status(500).json({ message: 'An error occurred' });
+  }
+});
+
+
 
 ///// Just to test TESTING API}
 

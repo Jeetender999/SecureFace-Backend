@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const { detectFace } = require('../services/faceService');
+const { detectFace, matchFace } = require('../services/faceService');
 
 const User = require('../models/User');
 const Visitor = require('../models/Visitor');
@@ -71,6 +71,16 @@ router.post('/register', upload.single('image'), async (req, res) => {
 
     const faceId = faceData.faces[0].face_token;
 
+        // Add face token to FaceSet
+        await axios.post(`${FACE_API_URL}/faceset/addface`, null, {
+            params: {
+              api_key: process.env.FACE_API_KEY,
+              api_secret: process.env.FACE_API_SECRET,
+              faceset_token: process.env.FACESET_TOKEN,
+              face_tokens: faceId,
+            },
+          });
+
     // Save user in the database
     const newUser = new User({
       name,
@@ -87,6 +97,83 @@ router.post('/register', upload.single('image'), async (req, res) => {
   }
 });
 
+
+
+// Route to detect and match a face
+router.post('/match', upload.single('image'), async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+  
+    try {
+      // Use Face++ Search API to match the face
+      const matchData = await matchFace(req.file.path);
+  
+      if (matchData.results && matchData.results.length > 0) {
+        const bestMatch = matchData.results[0];
+        const confidenceThreshold = 85; // Confidence threshold
+  
+        if (bestMatch.confidence >= confidenceThreshold) {
+          const faceToken = bestMatch.face_token;
+  
+          // Check if the face token exists in the registered user database
+          const user = await User.findOne({ faceId: faceToken });
+  
+          if (user) {
+            // If matched, fetch emotion details
+            const faceData = await detectFace(req.file.path);
+            const emotion = faceData.faces[0].attributes.emotion;
+  
+            const dominantEmotion = Object.keys(emotion).reduce((a, b) =>
+              emotion[a] > emotion[b] ? a : b
+            );
+  
+            // Return the user's details with emotion
+            return res.status(200).json({
+              message: 'User matched successfully',
+              user,
+              currentEmotion: dominantEmotion,
+            });
+          }
+        }
+      }
+  
+      // If no valid match, detect face and treat as a visitor
+      const faceData = await detectFace(req.file.path);
+  
+      if (!faceData.faces || faceData.faces.length === 0) {
+        return res.status(400).json({ error: 'No face detected in the image' });
+      }
+  
+      const faceAttributes = faceData.faces[0].attributes;
+      const emotion = faceAttributes.emotion;
+  
+      const dominantEmotion = Object.keys(emotion).reduce((a, b) =>
+        emotion[a] > emotion[b] ? a : b
+      );
+  
+      // Save the visitor details to the database
+      const visitor = new Visitor({
+        name: 'Stranger',
+        age: faceAttributes.age.value,
+        gender: faceAttributes.gender.value,
+        emotion,
+        currentEmotion: dominantEmotion, // Save the dominant emotion
+      });
+  
+      const savedVisitor = await visitor.save();
+  
+      // Return visitor details with emotion
+      res.status(200).json({
+        message: 'No match found. Visitor treated as Stranger',
+        visitor: savedVisitor,
+      });
+    } catch (error) {
+      console.error('Error matching face:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
 
 ///// Just to test TESTING API}
 

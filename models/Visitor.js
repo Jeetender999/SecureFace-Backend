@@ -6,6 +6,7 @@ const VisitorSchema = new mongoose.Schema({
   age: { type: Number },
   gender: { type: String },
   emotion: { type: Object }, // Stores emotion details from Face++
+  currentEmotion: { type: String }, // Stores the dominant emotion
   detectedAt: { type: Date, default: Date.now },
 });
 

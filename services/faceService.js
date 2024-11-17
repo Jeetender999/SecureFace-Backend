@@ -33,6 +33,32 @@ async function detectFace(imagePath) {
 
 
 /**
+ * Match a face against a stored FaceSet
+ * @param {string} imagePath - Path to the image file
+ * @returns {Object} - Face matching results
+ */
+async function matchFace(imagePath) {
+    try {
+      const formData = new FormData();
+      formData.append('api_key', process.env.FACE_API_KEY);
+      formData.append('api_secret', process.env.FACE_API_SECRET);
+      formData.append('image_file', fs.createReadStream(imagePath));
+      formData.append('faceset_token', process.env.FACESET_TOKEN); // Use the FaceSet token
+  
+      const response = await axios.post(`${FACE_API_URL}/search`, formData, {
+        headers: formData.getHeaders(),
+      });
+  
+      return response.data;
+    } catch (error) {
+      console.error('Error matching face:', error.message);
+      throw new Error('Failed to match face.');
+    }
+  }
+  
+
+
+/**
  * Create a FaceSet
  * @returns {Object} - FaceSet creation result
  */
@@ -55,4 +81,4 @@ async function createFaceSet() {
   }
 
   
-module.exports = { detectFace,createFaceSet };
+module.exports = { detectFace,createFaceSet, matchFace };
